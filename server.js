@@ -23,27 +23,53 @@ var server = http.createServer(function(request, response) {
   /******** 从这里开始看，上面不要看 ************/
 
   console.log("有个傻子发请求过来啦！路径（带查询参数）为：" + pathWithQuery);
-  let result;
-  const fileType = {
-    ".html": "text/html",
-    ".css": "text/css",
-    ".js": "text/javascript",
-    ".png": "image/png"
-  };
-  path = path === "/" ? "/index.html" : path;
-  const index = path.lastIndexOf(".");
-  const suffix = path.substring(index);
-  response.statusCode = 200;
-  response.setHeader("Content-Type", `${fileType[suffix] || 'text/plain'};charset=utf-8`);
+  if (path === "/register" && method === "POST") {
+    let bufferArray = [];
+    const userArray = JSON.parse(fs.readFileSync("./db/user.json").toString());
+    request.on("data", chunk => {
+      bufferArray.push(chunk);
+    });
+    request.on("end", () => {
+      const { username, password } = JSON.parse(
+        Buffer.concat(bufferArray).toString()
+      );
+      const lastUser = userArray[userArray.length - 1];
+      const newUser = {
+        id: lastUser ? lastUser.id + 1 : 1,
+        username,
+        password
+      };
+      userArray.push(newUser)
+      fs.writeFileSync('./db/user.json', JSON.stringify(userArray))
+    });
+    response.setHeader("Content-Type", "text/html");
+    response.end();
+  } else {
+    let result;
+    const fileType = {
+      ".html": "text/html",
+      ".css": "text/css",
+      ".js": "text/javascript",
+      ".png": "image/png"
+    };
+    path = path === "/" ? "/index.html" : path;
+    const index = path.lastIndexOf(".");
+    const suffix = path.substring(index);
+    response.statusCode = 200;
+    response.setHeader(
+      "Content-Type",
+      `${fileType[suffix] || "text/plain"};charset=utf-8`
+    );
 
-  try {
-    result = fs.readFileSync(`./public${path}`);
-  } catch (error) {
-    response.statusCode = 404;
-    result = `请求失败, ${error}`;
+    try {
+      result = fs.readFileSync(`./public${path}`);
+    } catch (error) {
+      response.statusCode = 404;
+      result = `请求失败, ${error}`;
+    }
+    response.write(result);
+    response.end();
   }
-  response.write(result);
-  response.end();
 
   /******** 代码结束，下面不要看 ************/
 });

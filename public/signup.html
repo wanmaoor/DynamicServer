@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>注册 - 干啥勒</title>
+  </head>
+  <body>
+    <h1>注册</h1>
+    <form id="signUp">
+      <div>
+        <label for="username"
+          >用户名:
+          <input type="text" name="username" />
+        </label>
+      </div>
+      <div>
+        <label for="password"
+          >密码:
+          <input type="password" name="password" />
+        </label>
+      </div>
+      <div>
+        <button type="submit">提交</button>
+      </div>
+    </form>
+    <script src="https://cdn.bootcss.com/axios/0.19.0/axios.min.js"></script>
+    <script>
+      const signUp = document.querySelector('#signUp')
+      signUp.addEventListener('submit', (e)=>{
+        e.preventDefault()
+        const username = document.querySelector('#signUp [name=username]').value
+        const password = document.querySelector('#signUp [name=password]').value
+        console.log(username, password);
+        axios({
+          method: 'POST',
+          url: '/register',
+          headers: { 'content-type': 'text/json' },
+          data: JSON.stringify({username, password})
+        }).then(() => {
+          alert('注册成功')
+          location.href = './signin.html'
+        }).catch((err) => {
+          alert(`失败,${err}`)
+        });
+      })
+    </script>
+
+  </body>
+</html>
