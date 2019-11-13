@@ -43,7 +43,7 @@
           data: JSON.stringify({username, password})
         }).then(() => {
           alert('注册成功')
-          location.href = './signin.html'
+          location.href = '/home.html'
         }).catch((err) => {
           alert(`失败,${err}`)
         });

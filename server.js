@@ -39,11 +39,72 @@ var server = http.createServer(function(request, response) {
         username,
         password
       };
-      userArray.push(newUser)
-      fs.writeFileSync('./db/user.json', JSON.stringify(userArray))
+      userArray.push(newUser);
+      fs.writeFileSync("./db/user.json", JSON.stringify(userArray));
     });
     response.setHeader("Content-Type", "text/html");
     response.end();
+  } else if (path === "/signIn" && method === "POST") {
+    response.setHeader("Content-Type", "text/html");
+    let bufferArray = [];
+    const userArray = JSON.parse(fs.readFileSync("./db/user.json").toString());
+    let sessionArray = JSON.parse(
+      fs.readFileSync("./db/session.json").toString()
+    );
+    request.on("data", chunk => {
+      bufferArray.push(chunk);
+    });
+    const random = Math.random();
+
+    request.on("end", () => {
+      const { username, password } = JSON.parse(
+        Buffer.concat(bufferArray).toString()
+      );
+      const user = userArray.find(user => {
+        return user.username === username && user.password === password;
+      });
+      if (user === undefined) {
+        response.statusCode = 400;
+        response.end("登陆失败");
+      } else {
+        response.statusCode = 200;
+        response.setHeader("Set-Cookie", `session_id=${random}`);
+        const sessionItem = { id: user.id, random };
+        sessionArray.push(sessionItem);
+        const stringifySessionArray = JSON.stringify(sessionArray);
+        fs.writeFileSync("./db/session.json", stringifySessionArray);
+        response.end();
+      }
+    });
+  } else if (path === "/home.html") {
+    response.setHeader("Content-Type", "text/html");
+    const cookie = request.headers["cookie"];
+    let cookieArray = cookie.split('');
+    const equalMarkIndex = cookie.split('').findIndex(item => item === '=')
+    cookieArray = cookieArray.splice(equalMarkIndex+1)
+    const session_id = Number(cookieArray.join(""));
+    const userArray = JSON.parse(fs.readFileSync("./db/user.json").toString());
+    const sessionArray = JSON.parse(
+      fs.readFileSync("./db/session.json").toString()
+    );
+    const sessionItem = sessionArray.filter(sessionItem => {
+      return session_id === sessionItem.random
+    })[0]
+    const userName = userArray.filter(user => {
+      if(user.id === sessionItem.id){
+        return user.username
+      }
+    })[0].username
+    const page = fs.readFileSync("./public/home.html").toString();
+    if (sessionItem) {
+      const template = page.replace("{{loginStatus}}", "已登录了").replace("{{userName}}", userName);
+      response.write(template);
+      response.end();
+    } else {
+      const template = page.replace("{{loginStatus}}", `未登录`);
+      response.write(template);
+      response.end();
+    }
   } else {
     let result;
     const fileType = {
