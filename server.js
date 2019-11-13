@@ -79,32 +79,37 @@ var server = http.createServer(function(request, response) {
   } else if (path === "/home.html") {
     response.setHeader("Content-Type", "text/html");
     const page = fs.readFileSync("./public/home.html").toString();
-    const cookie = request.headers["cookie"] || 'noCookie';
-    if (cookie === 'noCookie') {
+    const cookie = request.headers["cookie"] || "noCookie";
+    if (cookie === "noCookie") {
       const template = page.replace("{{loginStatus}}", `未登录`).replace("{{userName}}", "游客");
       response.write(template);
       response.end();
-    }
-    let cookieArray = cookie.split('');
-    const equalMarkIndex = cookie.split('').findIndex(item => item === '=')
-    cookieArray = cookieArray.splice(equalMarkIndex+1)
-    const session_id = Number(cookieArray.join(""));
-    const userArray = JSON.parse(fs.readFileSync("./db/user.json").toString());
-    const sessionArray = JSON.parse(
-      fs.readFileSync("./db/session.json").toString()
-    );
-    const sessionItem = sessionArray.filter(sessionItem => {
-      return session_id === sessionItem.random
-    })[0]
-    const userName = userArray.filter(user => {
-      if(user.id === sessionItem.id){
-        return user.username
+    } else {
+      let cookieArray = cookie.split("");
+      const equalMarkIndex = cookie.split("").findIndex(item => item === "=");
+      cookieArray = cookieArray.splice(equalMarkIndex + 1);
+      const session_id = Number(cookieArray.join(""));
+      const userArray = JSON.parse(
+        fs.readFileSync("./db/user.json").toString()
+      );
+      const sessionArray = JSON.parse(
+        fs.readFileSync("./db/session.json").toString()
+      );
+      const sessionItem = sessionArray.filter(sessionItem => {
+        return session_id === sessionItem.random;
+      })[0];
+      const userName = userArray.filter(user => {
+        if (user.id === sessionItem.id) {
+          return user.username;
+        }
+      })[0].username;
+      if (sessionItem) {
+        const template = page
+          .replace("{{loginStatus}}", "已登录了")
+          .replace("{{userName}}", userName);
+        response.write(template);
+        response.end();
       }
-    })[0].username
-    if (sessionItem) {
-      const template = page.replace("{{loginStatus}}", "已登录了").replace("{{userName}}", userName);
-      response.write(template);
-      response.end();
     }
   } else {
     let result;
