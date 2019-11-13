@@ -78,7 +78,13 @@ var server = http.createServer(function(request, response) {
     });
   } else if (path === "/home.html") {
     response.setHeader("Content-Type", "text/html");
-    const cookie = request.headers["cookie"];
+    const page = fs.readFileSync("./public/home.html").toString();
+    const cookie = request.headers["cookie"] || 'noCookie';
+    if (cookie === 'noCookie') {
+      const template = page.replace("{{loginStatus}}", `未登录`).replace("{{userName}}", "游客");
+      response.write(template);
+      response.end();
+    }
     let cookieArray = cookie.split('');
     const equalMarkIndex = cookie.split('').findIndex(item => item === '=')
     cookieArray = cookieArray.splice(equalMarkIndex+1)
@@ -95,13 +101,8 @@ var server = http.createServer(function(request, response) {
         return user.username
       }
     })[0].username
-    const page = fs.readFileSync("./public/home.html").toString();
     if (sessionItem) {
       const template = page.replace("{{loginStatus}}", "已登录了").replace("{{userName}}", userName);
-      response.write(template);
-      response.end();
-    } else {
-      const template = page.replace("{{loginStatus}}", `未登录`);
       response.write(template);
       response.end();
     }
